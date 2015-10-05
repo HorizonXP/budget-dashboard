@@ -12,7 +12,7 @@ import routes from '../common/routes';
 
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import { createLocation, createMemoryHistory } from 'history';
+import { createMemoryHistory } from 'history';
 import { match } from 'react-router';
 import { Provider } from 'react-redux';
 import { ReduxRouter } from 'redux-router';
@@ -30,7 +30,7 @@ app.use(webpackHotMiddleware(compiler));
 app.use('/static', Express.static(__dirname + '/../static'));
 
 app.use(function(req, res, next) {
-  const location = createLocation(req.url);
+  const location = createMemoryHistory().createLocation(req.url);
   match( { routes, location }, (error, redirectLocation, renderProps) => {
     if (redirectLocation) {
       return res.redirect(redirectLocation.pathname + redirectLocation.search);
@@ -40,7 +40,7 @@ app.use(function(req, res, next) {
       // 404
       return res.status(404).send("Page not found.");
     } else {
-      const initialState = {};
+      const initialState = undefined;
       const store = configureStore(initialState, routes, createMemoryHistory);
       const componentInstance = (
         <Provider store={store}>

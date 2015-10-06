@@ -1,23 +1,27 @@
 import React from 'react';
 import { Route, IndexRoute } from 'react-router';
 import { App, Home, SignedIn, SignedOut, Login } from './containers';
-import { replaceState as reduxReplaceState } from 'redux-router';
+import { replaceState } from 'redux-router';
 
-function requireAuth(location, replaceWith) {
-  if (!nextState.user.loggedIn) {
-    reduxReplaceState(null, '/login', { nextPathname: location.pathname })
+export default function initializeRoutes(store) {
+  function requireAuth(nextState, oldReplaceState) {
+    const state = store.getState();
+    const isLoggedIn = Boolean(state.user.loggedIn);
+    if (!isLoggedIn) {
+      const action = replaceState({ nextPathname: nextState.location.pathname }, '/login');
+      store.dispatch(action);
+      // reduxReplaceState(null, '/login', { nextPathname: location.pathname });
+    }
   }
-}
-
-const routes = (
-  <Route path="/" component={App}>
-    <Route component={SignedOut}>
-      <Route path="login" component={Login} />
+  const routes = (
+    <Route component={App}>
+      <Route component={SignedOut}>
+        <Route path="/login" component={Login} />
+      </Route>
+      <Route component={SignedIn} onEnter={requireAuth}>
+        <Route path="/" component={Home}/>
+      </Route>
     </Route>
-    <Route component={SignedIn} onEnter={requireAuth}>
-      <Route component={Home}/>
-    </Route>
-  </Route>
-);
-
-export default routes;
+  );
+  return routes;
+};

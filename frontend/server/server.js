@@ -8,7 +8,7 @@ import webpackHotMiddleware from 'webpack-hot-middleware';
 import webpackConfig from '../webpack.config';
 
 import configureStore from '../common/store/configureStore';
-import routes from '../common/routes';
+import initializeRoutes from '../common/routes';
 
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
@@ -31,6 +31,9 @@ app.use('/static', Express.static(__dirname + '/../static'));
 
 app.use(function(req, res, next) {
   const location = createMemoryHistory().createLocation(req.url);
+  const initialState = undefined;
+  const store = configureStore(initialState, createMemoryHistory);
+  const routes = initializeRoutes(store);
   match( { routes, location }, (error, redirectLocation, renderProps) => {
     if (redirectLocation) {
       return res.redirect(redirectLocation.pathname + redirectLocation.search);
@@ -40,8 +43,6 @@ app.use(function(req, res, next) {
       // 404
       return res.status(404).send("Page not found.");
     } else {
-      const initialState = undefined;
-      const store = configureStore(initialState, routes, createMemoryHistory);
       const componentInstance = (
         <Provider store={store}>
           <ReduxRouter>
@@ -51,11 +52,15 @@ app.use(function(req, res, next) {
       );
       var html = "<!DOCTYPE html>";
       html += ReactDOMServer.renderToString(componentInstance);
+      const clientInitialState = store.getState();
       let head = Helmet.rewind();
       let newHead = `
           ${head.meta}
           <title>${head.title}</title>
           ${head.link}
+          <script>
+            window.__INITIAL_STATE__ = ${JSON.stringify(clientInitialState)};
+          </script>
         </head>
       `;
       html = html.replace('</head>', newHead);

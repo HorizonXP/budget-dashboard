@@ -35,9 +35,6 @@ class App extends React.Component {
             ]}
           />
           {this.props.children}
-          <DebugPanel top right bottom>
-            <DevTools store={this.context.store} monitor={LogMonitor} />
-          </DebugPanel>
           <script src="/static/js/jquery-2.1.4.min.js"></script>
           <script src="/static/js/bootstrap.min.js"></script>
           <script src="/static/js/bundle.js"></script>

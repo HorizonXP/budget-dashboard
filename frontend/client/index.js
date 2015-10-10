@@ -12,7 +12,6 @@ import initializeRoutes from '../common/routes';
 const initialState = window.__INITIAL_STATE__;
 const store = configureStore(initialState, createHistory);
 const routes = initializeRoutes(store);
-console.log(initialState);
 
 ReactDOM.render(
   <Provider store={store}>

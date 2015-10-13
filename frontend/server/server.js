@@ -16,6 +16,7 @@ import { createMemoryHistory } from 'history';
 import { match } from 'react-router';
 import { Provider } from 'react-redux';
 import { ReduxRouter } from 'redux-router';
+import bodyParser from 'body-parser';
 
 const app = new Express();
 const port = 3000;
@@ -28,6 +29,11 @@ app.use(webpackHotMiddleware(compiler));
 
 //expose public folder as static assets
 app.use('/static', Express.static(__dirname + '/../static'));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
 
 app.use(function(req, res, next) {
   const location = createMemoryHistory().createLocation(req.url);

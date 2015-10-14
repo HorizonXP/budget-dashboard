@@ -4,20 +4,18 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { createHistory } from 'history';
-import { ReduxRouter } from 'redux-router';
+import { reduxReactRouter, ReduxRouter } from 'redux-router';
 
-import configureStore from '../common/store/configureStore';
-import initializeRoutes from '../common/routes';
+import createStore from '../common/store/createStore';
+import getRoutes from '../common/routes';
+import makeRouteHooksSafe from '../common/helpers/makeRouteHooksSafe.js';
 
 const initialState = window.__INITIAL_STATE__;
-const store = configureStore(initialState, createHistory);
-const routes = initializeRoutes(store);
+const store = createStore(reduxReactRouter, makeRouteHooksSafe(getRoutes), createHistory, initialState);
 
 ReactDOM.render(
-  <Provider store={store}>
-    <ReduxRouter>
-      {routes}
-    </ReduxRouter>
+  <Provider store={store} key="provider">
+    <ReduxRouter routes={getRoutes(store)}/>
   </Provider>,
   document
 );

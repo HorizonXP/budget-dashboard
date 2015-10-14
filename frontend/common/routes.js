@@ -2,15 +2,22 @@ import React from 'react';
 import { Route, IndexRoute } from 'react-router';
 import { App, Home, SignedIn, SignedOut, Login } from './containers';
 
-export default function initializeRoutes(store) {
-  function requireAuth(nextState, replaceState) {
-    const state = store.getState();
-    const isLoggedIn = Boolean(state.user.loggedIn);
-    if (!isLoggedIn) {
-      replaceState({ nextPathname: nextState.location.pathname }, '/login');
+export default (store) => {
+  const requireAuth = (nextState, replaceState, cb) => {
+    function checkAuth() {
+      const { user } = store.getState();
+      const loggedIn = user.get('loggedIn');
+      if (!loggedIn) {
+        let newState = nextState;
+        newState['nextPathname'] = nextState.location.pathname;
+        replaceState(newState, '/login');
+      }
+      cb();
     }
-  }
-  const routes = (
+
+    checkAuth();
+  };
+  return (
     <Route component={App}>
       <Route component={SignedOut}>
         <Route path="/login" component={Login} />
@@ -20,5 +27,4 @@ export default function initializeRoutes(store) {
       </Route>
     </Route>
   );
-  return routes;
 };

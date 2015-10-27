@@ -1,7 +1,7 @@
 import React, { PropTypes } from 'react';
 import Helmet from 'react-helmet';
 import { connect } from 'react-redux';
-import { DevTools, DebugPanel, LogMonitor } from 'redux-devtools/lib/react';
+import { isLoaded as isAuthLoaded, load as loadAuth, getToken } from '../redux/reducers/user.js';
 
 @connect(state => ({ routerState: state.router }))
 class App extends React.Component {
@@ -11,6 +11,15 @@ class App extends React.Component {
 
   static contextTypes = {
     store: PropTypes.object
+  }
+
+  static fetchData(getState, dispatch) {
+    const promises = [];
+    if (!isAuthLoaded(getState())) {
+      const token = getToken(getState());
+      promises.push(dispatch(loadAuth(token)));
+    }
+    return Promise.all(promises);
   }
 
   render() {
@@ -30,7 +39,7 @@ class App extends React.Component {
             link={[
               {"href": "/static/css/bootstrap.min.css", "rel": "stylesheet"},
               {"href": "/static/css/bootstrap-theme.min.css", "rel": "stylesheet"},
-              {"href": "/static/css/font-awesome.min.css", "rel:": "stylesheet"},
+              {"href": "/static/css/font-awesome.min.css", "rel": "stylesheet"},
               {"href": "/static/css/common.css", "rel": "stylesheet"}
             ]}
           />
@@ -45,5 +54,3 @@ class App extends React.Component {
 }
 
 export default App;
-/*
-*/

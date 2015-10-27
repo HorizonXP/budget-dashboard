@@ -1,12 +1,13 @@
 import React from 'react';
 import { Route, IndexRoute } from 'react-router';
 import { App, Home, SignedIn, SignedOut, Login } from './containers';
+import { isLoaded as isAuthLoaded, load as loadAuth, getToken } from './redux/reducers/user';
 
-export default (store) => {
+export default store => {
   const requireAuth = (nextState, replaceState, cb) => {
     function checkAuth() {
       const { user } = store.getState();
-      const loggedIn = user.get('loggedIn');
+      const loggedIn = user.has('loggedIn') ? user.get('loggedIn') : false;
       if (!loggedIn) {
         let newState = nextState;
         newState['nextPathname'] = nextState.location.pathname;
@@ -15,7 +16,12 @@ export default (store) => {
       cb();
     }
 
-    checkAuth();
+    if (!isAuthLoaded(store.getState())) {
+      const token = getToken(store.getState());
+      store.dispatch(loadAuth(token)).then(checkAuth);
+    } else {
+      checkAuth();
+    }
   };
   return (
     <Route component={App}>

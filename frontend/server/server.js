@@ -7,7 +7,7 @@ import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 import webpackConfig from '../webpack.config';
 
-import createStore from '../common/store/createStore';
+import createStore from '../common/redux/store/createStore';
 import getRoutes from '../common/routes';
 
 import React from 'react';
@@ -19,6 +19,15 @@ import { reduxReactRouter, match } from 'redux-router/server';
 import bodyParser from 'body-parser';
 import qs from 'query-string';
 import getStatusFromRoutes from '../common/helpers/getStatusFromRoutes';
+import ApiClient from '../common/helpers/ApiClient.js';
+import fetch from 'node-fetch';
+import { toJSON } from 'transit-immutable-js';
+import cookieParser from 'cookie-parser';
+import docCookies from '../common/helpers/docCookies';
+import {Map} from 'immutable';
+
+global.__CLIENT__ = false;
+global.__SERVER__ = true;
 
 const app = new Express();
 const port = 3000;
@@ -37,8 +46,24 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
+app.use(cookieParser())
+
 app.use(function(req, res, next) {
-  const store = createStore(reduxReactRouter, getRoutes, createMemoryHistory);
+  const token = req.cookies['access_token'];
+  const client = new ApiClient(fetch, req);
+  const initialState = {
+    'user': Map({
+      'loaded': false,
+      'token': token
+    })
+  };
+  const cookieDoc = {};
+  Object.defineProperty(cookieDoc, "cookie", {
+    get: () => req.get('cookie'),
+    set: (cookie) => req.set('cookie', cookie)
+  });
+
+  const store = createStore(reduxReactRouter, getRoutes, createMemoryHistory, client, docCookies(cookieDoc), initialState);
   store.dispatch(match(req.originalUrl, (error, redirectLocation, routerState) => {
     if (redirectLocation) {
       return res.redirect(redirectLocation.pathname + redirectLocation.search);
@@ -52,31 +77,33 @@ app.use(function(req, res, next) {
         routerState.location.query = qs.parse(routerState.location.search);
       }
 
-      const componentInstance = (
-        <Provider store={store} key="provider">
-          <ReduxRouter/>
-        </Provider>
-      );
-      const status = getStatusFromRoutes(routerState.routes);
-      if (status) {
-        res.status(status);
-      }
+      store.getState().router.then(() => {
+        const componentInstance = (
+          <Provider store={store} key="provider">
+            <ReduxRouter/>
+          </Provider>
+        );
+        const status = getStatusFromRoutes(routerState.routes);
+        if (status) {
+          res.status(status);
+        }
 
-      let html = "<!DOCTYPE html>";
-      html += ReactDOMServer.renderToString(componentInstance);
-      const clientInitialState = store.getState();
-      let head = Helmet.rewind();
-      let newHead = `
-          ${head.meta}
-          <title>${head.title}</title>
-          ${head.link}
-          <script>
-            window.__INITIAL_STATE__ = ${JSON.stringify(clientInitialState)};
-          </script>
-        </head>
-      `;
-      html = html.replace('</head>', newHead);
-      res.send(html);
+        let html = "<!DOCTYPE html>";
+        html += ReactDOMServer.renderToString(componentInstance);
+        const clientInitialState = store.getState();
+        let head = Helmet.rewind();
+        let newHead = `
+            ${head.meta}
+            <title>${head.title}</title>
+            ${head.link}
+            <script>
+              window.__INITIAL_STATE__ = '${toJSON(clientInitialState)}';
+            </script>
+          </head>
+        `;
+        html = html.replace('</head>', newHead);
+        res.send(html);
+      });
     }
   }));
 });

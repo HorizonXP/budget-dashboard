@@ -1,7 +1,7 @@
 import React, { PropTypes } from 'react';
 import Helmet from 'react-helmet';
 import { connect } from 'react-redux';
-import { isLoaded as isAuthLoaded, load as loadAuth, getToken } from '../redux/reducers/user.js';
+import { isLoaded as isAuthLoaded, load as loadAuth } from '../redux/actions/user.js';
 
 @connect(state => ({ routerState: state.router }))
 class App extends React.Component {
@@ -16,8 +16,7 @@ class App extends React.Component {
   static fetchData(getState, dispatch) {
     const promises = [];
     if (!isAuthLoaded(getState())) {
-      const token = getToken(getState());
-      promises.push(dispatch(loadAuth(token)));
+      promises.push(dispatch(loadAuth(true)));
     }
     return Promise.all(promises);
   }

@@ -1,17 +1,19 @@
 import { createStore as _createStore, applyMiddleware, compose } from 'redux';
-import thunk from 'redux-thunk';
 import reducer from '../reducers';
-import clientMiddleware from '../middleware/clientMiddleware';
 import transitionMiddleware from '../middleware/transitionMiddleware';
+import effects from 'redux-effects';
+import {bearer} from 'redux-effects-credentials'
+import headers from '../middleware/headersMiddleware';
+import fetch from 'redux-effects-fetch';
+import multi from 'redux-multi';
 
-export default function createStore(reduxReactRouter, getRoutes, createHistory, client, docCookies, data) {
+export default function createStore(reduxReactRouter, getRoutes, createHistory, cookieMiddleware, data) {
   let finalCreateStore;
-  finalCreateStore = compose(
-    applyMiddleware(thunk, clientMiddleware(client), transitionMiddleware)
+  finalCreateStore = compose(applyMiddleware(multi, effects, cookieMiddleware, bearer(/\/api\//, state => state.user.get('token')), headers(/\/api\//), fetch, transitionMiddleware)
   )(_createStore);
   finalCreateStore = reduxReactRouter({ getRoutes, createHistory })(finalCreateStore);
 
-  const store = finalCreateStore(reducer(docCookies), data);
+  const store = finalCreateStore(reducer, data);
 
   if (module.hot) {
     // Enable Webpack hot module replacement for reducers

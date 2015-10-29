@@ -2,7 +2,7 @@ import React, { Component, PropTypes } from 'react';
 import Helmet from 'react-helmet';
 import { Grid, Col, Row, Input, Button, Alert } from 'react-bootstrap';
 import { connect } from 'react-redux';
-import * as userActions from '../redux/reducers/user';
+import * as userActions from '../redux/actions/user';
 
 @connect(
   state => ({user: state.user}),

@@ -1,82 +1,60 @@
 import {Map} from 'immutable';
-
-export const LOAD = 'user/LOAD';
-export const LOAD_SUCCESS = 'user/LOAD_SUCCESS';
-export const LOAD_FAIL = 'user/LOAD_FAIL';
-export const LOGIN = 'user/LOGIN';
-export const LOGIN_SUCCESS = 'user/LOGIN_SUCCESS';
-export const LOGIN_FAIL = 'user/LOGIN_FAIL';
-export const LOGOUT = 'user/LOGOUT';
-export const LOGOUT_SUCCESS = 'user/LOGOUT_SUCCESS';
-export const LOGOUT_FAIL = 'user/LOGOUT_FAIL';
+import {handleActions} from 'redux-actions'
 
 export const INITIAL_STATE = Map({
   loaded: false
 });
 
-export default function reducer(state = INITIAL_STATE, action) {
-  switch(action.type) {
-    case LOAD:
-      return state.set('loading', true);
-    case LOAD_SUCCESS:
-      return state.set('loading', false).set('loaded', true).set('user', action.result).set('loggedIn', true).remove('error');
-    case LOAD_FAIL:
-      return state.set('loading', false).set('loaded', false).set('user', null).set('loggedIn', false).set('error', action.error.body);
-    case LOGIN:
-      return state.set('loggingIn', true);
-    case LOGIN_SUCCESS:
-      return state.set('loggingIn', false).set('user', action.result.user).set('token', action.result.token).set('loggedIn', true).remove('loginError');
-    case LOGIN_FAIL:
-      return state.set('loggingIn', false).set('user', null).set('token', null).set('loggedIn', false).set('loginError', action.error.body);
-    case LOGOUT:
-      return state.set('loggingOut', true);
-    case LOGOUT_SUCCESS:
-      return state.set('loggingOut', false).set('user', null).set('token', null).set('loggedIn', false).remove('logoutError');
-    case LOGOUT_FAIL:
-      return state.set('loggingOut', false).set('logoutError', action.error.body);
-    default:
-      return state;
-  }
-}
+export default handleActions({
+  LOAD_USER: (state, action) => {
+    return state.set('loading', true).remove('loginError').remove('error').remove('logoutError');
+  },
 
-export function isLoaded(globalState) {
-  return globalState.user && globalState.user.has('loaded') && globalState.user.has('token') && globalState.user.get('loaded');
-}
+  LOAD_USER_SUCCESS: (state, action) => {
+    return state.set('loading', false).set('loaded', true).set('user', action.payload).set('loggedIn', true).remove('error');
+  },
 
-export function getToken(globalState) {
-  if (globalState.user && globalState.user.has('token')) {
-    return globalState.user.get('token');
-  } else {
-    return null;
-  }
-}
+  LOAD_USER_FAIL: (state, action) => {
+    return state.set('loading', false).set('loaded', false).set('user', null).set('loggedIn', false).set('error', action.payload);
+  },
 
-export function load(token) {
-  return {
-    types: [LOAD, LOAD_SUCCESS, LOAD_FAIL],
-    promise: (client) => { 
-      return client.get('/v1/accounts/current', {
-        token: token
-      })
-    }
-  };
-}
+  LOGIN: (state, action) => {
+    return state.set('loggingIn', true).remove('loginError').remove('error').remove('logoutError');
+  },
 
-export function login(username, password) {
-  return {
-    types: [LOGIN, LOGIN_SUCCESS, LOGIN_FAIL],
-    promise: (client) => client.post('/auth/login', {
-      data: {
-        username: username,
-        password: password
-      }
-    })
-  };
-}
+  LOGIN_SUCCESS: (state, action) => {
+    return state.set('loggingIn', false).set('user', action.payload.user).set('token', action.payload.token).set('loggedIn', true).remove('loginError');
+  },
 
-export function logout() {
-  return {
-    types: [LOGOUT, LOGOUT_SUCCESS, LOGOUT_FAIL],
-    promise: (client) => {return new Promise((resolve, reject) => resolve())}
-  };
-}
+  LOGIN_FAIL: (state, action) => {
+    return state.set('loggingIn', false).set('user', null).set('token', null).set('loggedIn', false).set('loginError', action.payload);
+  },
+
+  LOGOUT: (state, action) => {
+    return state.set('loggingOut', true).remove('loginError').remove('error').remove('logoutError');
+  },
+
+  LOGOUT_SUCCESS: (state, action) => {
+    return state.set('loggingOut', false).set('user', null).set('token', null).set('loggedIn', false).remove('logoutError');
+  },
+
+  LOGOUT_FAIL: (state, action) => {
+    return state.set('loggingOut', false).set('logoutError', action.error.body);
+  },
+
+  REFRESH_TOKEN: (state, action) => {
+    return state.set('refreshingToken', true);
+  },
+
+  REFRESH_TOKEN_SUCCESS: (state, action) => {
+    return state.set('refreshingToken', false).set('token', action.payload.token).remove('refreshTokenError');
+  },
+
+  REFRESH_TOKEN_FAIL: (state, action) => {
+    return state.set('refreshingToken', false).set('refreshTokenError', action.error.body);
+  },
+
+  SET_TOKEN: (state, action) => {
+    return state.set('token', action.payload);
+  },
+}, INITIAL_STATE);

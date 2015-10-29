@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, IndexRoute } from 'react-router';
 import { App, Home, SignedIn, SignedOut, Login } from './containers';
-import { isLoaded as isAuthLoaded, load as loadAuth, getToken } from './redux/reducers/user';
+import { isLoaded as isAuthLoaded, load as loadAuth} from './redux/actions/user';
 
 export default store => {
   const requireAuth = (nextState, replaceState, cb) => {
@@ -17,8 +17,7 @@ export default store => {
     }
 
     if (!isAuthLoaded(store.getState())) {
-      const token = getToken(store.getState());
-      store.dispatch(loadAuth(token)).then(checkAuth);
+      store.dispatch(loadAuth(true)).then(checkAuth);
     } else {
       checkAuth();
     }

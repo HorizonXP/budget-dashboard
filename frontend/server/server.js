@@ -23,7 +23,7 @@ import ApiClient from '../common/helpers/ApiClient.js';
 import fetch from 'node-fetch';
 import { toJSON } from 'transit-immutable-js';
 import cookieParser from 'cookie-parser';
-import docCookies from '../common/helpers/docCookies';
+import cookie from 'redux-effects-cookie';
 import {Map} from 'immutable';
 
 global.__CLIENT__ = false;
@@ -49,22 +49,9 @@ app.use(bodyParser.urlencoded({
 app.use(cookieParser())
 
 app.use(function(req, res, next) {
-  const token = req.cookies['access_token'];
-  const client = new ApiClient(fetch, req);
-  const initialState = {
-    'user': Map({
-      'loaded': false,
-      'token': token
-    })
-  };
-  const cookieDoc = {};
-  Object.defineProperty(cookieDoc, "cookie", {
-    get: () => req.get('cookie'),
-    set: (cookie) => req.set('cookie', cookie)
-  });
-
-  const store = createStore(reduxReactRouter, getRoutes, createMemoryHistory, client, docCookies(cookieDoc), initialState);
-  store.dispatch(match(req.originalUrl, (error, redirectLocation, routerState) => {
+  const cookieMiddleware = cookie(req.cookies);
+  req.store = createStore(reduxReactRouter, getRoutes, createMemoryHistory, cookieMiddleware);
+  req.store.dispatch(match(req.originalUrl, (error, redirectLocation, routerState) => {
     if (redirectLocation) {
       return res.redirect(redirectLocation.pathname + redirectLocation.search);
     } else if (error) {
@@ -77,9 +64,9 @@ app.use(function(req, res, next) {
         routerState.location.query = qs.parse(routerState.location.search);
       }
 
-      store.getState().router.then(() => {
+      req.store.getState().router.then(() => {
         const componentInstance = (
-          <Provider store={store} key="provider">
+          <Provider store={req.store} key="provider">
             <ReduxRouter/>
           </Provider>
         );
@@ -90,7 +77,7 @@ app.use(function(req, res, next) {
 
         let html = "<!DOCTYPE html>";
         html += ReactDOMServer.renderToString(componentInstance);
-        const clientInitialState = store.getState();
+        const clientInitialState = req.store.getState();
         let head = Helmet.rewind();
         let newHead = `
             ${head.meta}
@@ -103,7 +90,7 @@ app.use(function(req, res, next) {
         `;
         html = html.replace('</head>', newHead);
         res.send(html);
-      });
+      }).catch((err) => console.log(err));
     }
   }));
 });

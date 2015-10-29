@@ -12,20 +12,13 @@ import { reduxReactRouter, ReduxRouter } from 'redux-router';
 import createStore from '../common/redux/store/createStore';
 import getRoutes from '../common/routes';
 import makeRouteHooksSafe from '../common/helpers/makeRouteHooksSafe.js';
-import ApiClient from '../common/helpers/ApiClient.js';
-import 'whatwg-fetch';
 import { fromJSON } from 'transit-immutable-js';
-import docCookies from '../common/helpers/docCookies';
+import cookie from 'redux-effects-cookie';
 
 const initialState = fromJSON(window.__INITIAL_STATE__);
-const client = new ApiClient(fetch);
-const cookieDoc = {};
-Object.defineProperty(cookieDoc, "cookie", {
-  get: () => document.cookie,
-  set: (cookie) => document.cookie = cookie
-});
+const cookieMiddleware = cookie();
 
-const store = createStore(reduxReactRouter, makeRouteHooksSafe(getRoutes), createHistory, client, docCookies(cookieDoc), initialState);
+const store = createStore(reduxReactRouter, makeRouteHooksSafe(getRoutes), createHistory, cookieMiddleware, initialState);
 
 ReactDOM.render(
   <Provider store={store} key="provider">

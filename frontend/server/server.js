@@ -9,6 +9,7 @@ import webpackConfig from '../webpack.config';
 
 import createStore from '../common/redux/store/createStore';
 import getRoutes from '../common/routes';
+import parseToken from '../common/helpers/parseToken';
 
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
@@ -89,8 +90,21 @@ app.use(function(req, res, next) {
           </head>
         `;
         html = html.replace('</head>', newHead);
+        for (const key in req.cookies) {
+          let options = {};
+          if (key == 'access_token') {
+            const token = req.cookies[key];
+            if (token) {
+              const tokenObj = parseToken(token);
+              if (tokenObj) {
+                options['expires'] = (new Date(tokenObj.exp*1000));
+              }
+            }
+          }
+          res.cookie(key, req.cookies[key], options);
+        }
         res.send(html);
-      }).catch((err) => console.log(err));
+      }).catch((err) => console.log(err.stack));
     }
   }));
 });

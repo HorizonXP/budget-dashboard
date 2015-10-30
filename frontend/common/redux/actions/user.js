@@ -3,6 +3,8 @@ import {fetch} from 'redux-effects-fetch'
 import {bind} from 'redux-effects'
 import {cookie} from 'redux-effects-cookie'
 import util from 'util';
+import { replaceState } from 'redux-router';
+import parseToken from '../../helpers/parseToken';
 
 const loadUser = createAction('LOAD_USER');
 const loadUserSuccess = createAction('LOAD_USER_SUCCESS');
@@ -32,18 +34,21 @@ function formatUrl(path) {
   return '/api' + adjustedPath;
 }
 
-function chainBind (action, arr) {
-  return {
-    type: 'EFFECT_COMPOSE',
-    payload: action,
-    meta: {
-      steps: arr
+function accessTokenCookie(token) {
+  if (token !== undefined) {
+    const tokenObj = parseToken(token);
+    let options = {};
+    if (tokenObj) {
+      options['expires'] = (new Date(tokenObj.exp*1000));
     }
+    return cookie('access_token', token, options);
+  } else {
+    return cookie('access_token');
   }
 }
 
 export function isLoaded(globalState) {
-  return globalState.user && globalState.user.has('loaded') && globalState.user.has('token') && globalState.user.get('loaded');
+  return globalState.user && globalState.user.has('loaded') && globalState.user.has('token') && globalState.user.get('token') !== null && globalState.user.get('loaded');
 }
 
 export function getToken(globalState) {
@@ -54,13 +59,9 @@ export function getToken(globalState) {
   }
 }
 
-export function setTokenFromCookie() {
-  return bind(cookie('access_token'), setToken)
-}
-
 export function load(getFromCookie) {
   const fetchLoad = bind(
-    fetch(formatUrl('/v1/accounts/current'), {
+    fetch(formatUrl('/v1/accounts/current/'), {
       method: 'GET',
     }),
     loadUserSuccess,
@@ -70,7 +71,7 @@ export function load(getFromCookie) {
     return [
       loadUser(),
       bind(
-        cookie('access_token'), 
+        accessTokenCookie(),
         token => bind(
           setToken(token),
           () => fetchLoad
@@ -89,12 +90,15 @@ export function refresh(token) {
   return [
     refreshToken(),
     bind(
-      fetch(formatUrl('/auth/refresh'), {
+      fetch(formatUrl('/auth/refresh/'), {
         method: 'POST',
+        body: JSON.stringify({
+          token: token
+        })
       }),
       newToken => bind(
-        cookie('access_token', newToken.token),
-        () => refreshTokenSuccess(newToken)
+        accessTokenCookie(newToken.token),
+        () => refreshTokenSuccess(newToken) 
       ),
       refreshTokenFail
     )
@@ -105,7 +109,7 @@ export function login(username, password) {
   return [
     loginUser(),
     bind(
-      fetch(formatUrl('/auth/login'), {
+      fetch(formatUrl('/auth/login/'), {
         method: 'POST',
         body: JSON.stringify({
           username: username,
@@ -113,11 +117,11 @@ export function login(username, password) {
         })
       }),
       user => bind(
-        cookie('access_token', user.token),
+        accessTokenCookie(user.token),
         () => loginUserSuccess(user)
       ),
       error => bind(
-        cookie('access_token', null),
+        accessTokenCookie(null),
         () => loginUserFail(error)
       )
     )
@@ -128,7 +132,7 @@ export function logout() {
   return [
     logoutUser(),
     bind(
-      cookie('access_token', null),
+      accessTokenCookie(null),
       logoutUserSuccess
     )
   ]

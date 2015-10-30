@@ -1,5 +1,6 @@
 import {Map} from 'immutable';
-import {handleActions} from 'redux-actions'
+import {handleActions} from 'redux-actions';
+import parseToken from '../../helpers/parseToken';
 
 export const INITIAL_STATE = Map({
   loaded: false
@@ -23,11 +24,11 @@ export default handleActions({
   },
 
   LOGIN_SUCCESS: (state, action) => {
-    return state.set('loggingIn', false).set('user', action.payload.user).set('token', action.payload.token).set('loggedIn', true).remove('loginError');
+    return state.set('loggingIn', false).set('user', action.payload.user).set('token', parseToken(action.payload.token)).set('loggedIn', true).remove('loginError');
   },
 
   LOGIN_FAIL: (state, action) => {
-    return state.set('loggingIn', false).set('user', null).set('token', null).set('loggedIn', false).set('loginError', action.payload);
+    return state.set('loggingIn', false).set('user', null).set('token', parseToken(null)).set('loggedIn', false).set('loginError', action.payload);
   },
 
   LOGOUT: (state, action) => {
@@ -35,7 +36,7 @@ export default handleActions({
   },
 
   LOGOUT_SUCCESS: (state, action) => {
-    return state.set('loggingOut', false).set('user', null).set('token', null).set('loggedIn', false).remove('logoutError');
+    return state.set('loggingOut', false).set('user', null).set('token', parseToken(null)).set('loggedIn', false).remove('logoutError');
   },
 
   LOGOUT_FAIL: (state, action) => {
@@ -47,7 +48,7 @@ export default handleActions({
   },
 
   REFRESH_TOKEN_SUCCESS: (state, action) => {
-    return state.set('refreshingToken', false).set('token', action.payload.token).remove('refreshTokenError');
+    return state.set('refreshingToken', false).set('token', parseToken(action.payload.token)).remove('refreshTokenError');
   },
 
   REFRESH_TOKEN_FAIL: (state, action) => {
@@ -55,6 +56,6 @@ export default handleActions({
   },
 
   SET_TOKEN: (state, action) => {
-    return state.set('token', action.payload);
+    return state.set('token', parseToken(action.payload));
   },
 }, INITIAL_STATE);

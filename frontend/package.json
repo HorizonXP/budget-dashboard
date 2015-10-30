@@ -41,6 +41,7 @@
     "babel-runtime": "^5.8.25",
     "chai": "^3.3.0",
     "chai-immutable": "^1.3.0",
+    "console-group": "^0.1.2",
     "express": "^4.13.3",
     "mocha": "^2.3.3",
     "react-transform-hmr": "^1.0.1",
